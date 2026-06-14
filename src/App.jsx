@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_KEY;
+const SUPABASE_URL = "https://tgdidvzfrysxzcthjmzk.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRnZGlkdnpmcnlzeHpjdGhqbXprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0NTc0NDgsImV4cCI6MjA5NzAzMzQ0OH0.7EpfgQvrkvAVyQVRfSSTkfxL8OodFRDjt-LB-kxN74E";
 
 const fetchEvents = async () => {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/events?order=created_at.asc`, {
