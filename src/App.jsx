@@ -255,7 +255,7 @@ export default function CannesTracker() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-api-key": "sk-ant-api03-UhXBLmIVRHgEVP3tNMKMPYBdVmpf3pkXNKWaL3z6XiIUHQ7cHY-nBFEWjqA0IHhiMZ-rC7t2gAzxhxNpqxTaA-w44GlAAA",
+          "x-api-key": "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",
           "anthropic-version": "2023-06-01",
           "anthropic-dangerous-direct-browser-access": "true"
         },
