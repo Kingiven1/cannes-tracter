@@ -11,6 +11,9 @@ const api = (path, opts = {}) =>
       apikey: SUPABASE_KEY,
       Authorization: `Bearer ${opts.token || SUPABASE_KEY}`,
       "Content-Type": "application/json",
+          "x-api-key": "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",
+          "anthropic-version": "2023-06-01",
+          "anthropic-dangerous-direct-browser-access": "true",
       ...(opts.prefer ? { Prefer: opts.prefer } : {}),
       ...(opts.headers || {}),
     },
@@ -269,10 +272,13 @@ export default function CannesTracker() {
       const compressed = await compressImage(flyerImg);
       const base64 = compressed.split(",")[1];
       const mediaType = "image/jpeg";
-      const response = await fetch("/api/scan", {
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "x-api-key": "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",
+          "anthropic-version": "2023-06-01",
+          "anthropic-dangerous-direct-browser-access": "true",
         },
         body: JSON.stringify({
           model: "claude-sonnet-4-6",
