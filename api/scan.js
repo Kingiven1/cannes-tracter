@@ -25,7 +25,6 @@ export default async function handler(req, res) {
     });
 
     const text = await response.text();
-    
     try {
       const data = JSON.parse(text);
       return res.status(200).json(data);
