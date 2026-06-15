@@ -251,13 +251,10 @@ export default function CannesTracker() {
     try {
       const base64 = flyerImg.split(",")[1];
       const mediaType = flyerImg.split(";")[0].split(":")[1];
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
+      const response = await fetch("/api/scan", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-api-key": "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",
-          "anthropic-version": "2023-06-01",
-          "anthropic-dangerous-direct-browser-access": "true"
         },
         body: JSON.stringify({
           model: "claude-sonnet-4-6",
