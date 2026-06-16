@@ -97,6 +97,14 @@ const c = {
 export default function CannesTracker() {
   const [session, setSession] = useState(null);
   const [authMode, setAuthMode] = useState("login");
+  const [resetSent, setResetSent] = useState(false);
+
+  const handleForgotPassword = async () => {
+    if (!authForm.email) { setAuthError("Enter your email first."); return; }
+    await authApi("/recover", { email: authForm.email });
+    setResetSent(true);
+    setAuthError("");
+  };
   const [authForm, setAuthForm] = useState({ email: "", password: "" });
   const [authError, setAuthError] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
@@ -123,27 +131,55 @@ export default function CannesTracker() {
     checkSession();
   }, []);
 
+  const refreshSession = async (refresh_token) => {
+    const data = await authApi("/token?grant_type=refresh_token", { refresh_token });
+    if (data.access_token) {
+      localStorage.setItem("cannes_session", JSON.stringify(data));
+      setSession(data);
+      return data;
+    }
+    return null;
+  };
+
   const checkSession = async () => {
     try {
       const stored = localStorage.getItem("cannes_session");
       if (stored) {
-        const s = JSON.parse(stored);
+        let s = JSON.parse(stored);
+        // Always refresh on load so the token is guaranteed fresh
+        const refreshed = await refreshSession(s.refresh_token);
+        s = refreshed || s;
         setSession(s);
-        await loadEvents(s.access_token, s.user.id);
+        await loadEvents(s.access_token, s.user.id, s.refresh_token);
       }
     } catch (e) {}
     setCheckingAuth(false);
   };
 
-  const loadEvents = async (token, userId) => {
+  const loadEvents = async (token, userId, refresh_token) => {
     setLoading(true);
     try {
       const [featRes, myRes] = await Promise.all([
         api(`/rest/v1/events?featured=eq.true&order=created_at.asc`, { token }),
         api(`/rest/v1/events?user_id=eq.${userId}&featured=eq.false&order=created_at.asc`, { token }),
       ]);
-      const feat = await featRes.json();
-      const mine = await myRes.json();
+      let feat = await featRes.json();
+      let mine = await myRes.json();
+
+      // If the token expired, refresh and retry once
+      const expired = feat?.message === "JWT expired" || mine?.message === "JWT expired" || feat?.code === "PGRST303" || mine?.code === "PGRST303";
+      if (expired && refresh_token) {
+        const refreshed = await refreshSession(refresh_token);
+        if (refreshed) {
+          const [featRes2, myRes2] = await Promise.all([
+            api(`/rest/v1/events?featured=eq.true&order=created_at.asc`, { token: refreshed.access_token }),
+            api(`/rest/v1/events?user_id=eq.${userId}&featured=eq.false&order=created_at.asc`, { token: refreshed.access_token }),
+          ]);
+          feat = await featRes2.json();
+          mine = await myRes2.json();
+        }
+      }
+
       if (Array.isArray(feat)) setFeaturedEvents(feat);
       if (Array.isArray(mine)) setMyEvents(mine);
     } catch (e) { console.error(e); }
@@ -161,7 +197,7 @@ export default function CannesTracker() {
       } else if (data.access_token) {
         localStorage.setItem("cannes_session", JSON.stringify(data));
         setSession(data);
-        await loadEvents(data.access_token, data.user.id);
+        await loadEvents(data.access_token, data.user.id, data.refresh_token);
       } else if (authMode === "signup") {
         setAuthError("Check your email to confirm your account, then log in.");
       }
@@ -403,6 +439,11 @@ export default function CannesTracker() {
             </button>
             <button style={c.cancelBtn} onClick={() => { setAuthMode(authMode === "login" ? "signup" : "login"); setAuthError(""); }}>
               {authMode === "login" ? "No account? Sign up" : "Have an account? Log in"}
+            {authMode === "login" && (
+              <button style={{ fontSize: 11, color: "#555", background: "none", border: "none", cursor: "pointer", marginTop: -4 }} onClick={handleForgotPassword}>
+                {resetSent ? "✓ Reset email sent!" : "Forgot password?"}
+              </button>
+            )}
             </button>
           </div>
         </div>
@@ -552,3 +593,4 @@ export default function CannesTracker() {
     </>
   );
 }
+r
