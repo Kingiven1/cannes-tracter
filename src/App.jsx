@@ -631,6 +631,16 @@ export default function CannesTracker() {
             </div>
           )}
         </div>
+
+        <div style={{ textAlign: "center", padding: "8px 20px 36px" }}>
+          <a
+            href="mailto:djkingiven@gmail.com?subject=Cannes Lions Scheduler Feedback"
+            style={{ fontSize: 11, color: "#444", textDecoration: "none" }}
+          >
+            💬 Suggestions or issues? Reach out
+          </a>
+        </div>
+
       </div>
     </>
   );
