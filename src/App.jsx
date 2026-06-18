@@ -121,6 +121,8 @@ export default function CannesTracker() {
   const [scanning, setScanning] = useState(false);
   const [scanError, setScanError] = useState("");
   const [addingFeatured, setAddingFeatured] = useState(false);
+  const [multiDates, setMultiDates] = useState(null);
+  const [applyToAllDays, setApplyToAllDays] = useState(true);
   const fileRef = useRef();
 
   const isAdmin = session?.user?.email === ADMIN_EMAIL;
@@ -251,24 +253,36 @@ export default function CannesTracker() {
 
   const handleAdd = async () => {
     if (!form.name.trim()) return;
-    const payload = {
-      ...form,
-      user_id: session.user.id,
-      featured: isAdmin && addingFeatured,
-    };
-    const res = await api("/rest/v1/events", {
-      token: session.access_token,
-      method: "POST",
-      prefer: "return=representation",
-      body: JSON.stringify(payload),
-    });
-    const result = await res.json();
-    if (Array.isArray(result) && result[0]) {
-      if (payload.featured) setFeaturedEvents(prev => [...prev, result[0]]);
-      else setMyEvents(prev => [...prev, result[0]]);
+    const datesToCreate = (multiDates && applyToAllDays) ? multiDates : [form.date];
+
+    const created = [];
+    for (const d of datesToCreate) {
+      const payload = {
+        ...form,
+        date: d,
+        user_id: session.user.id,
+        featured: isAdmin && addingFeatured,
+      };
+      const res = await api("/rest/v1/events", {
+        token: session.access_token,
+        method: "POST",
+        prefer: "return=representation",
+        body: JSON.stringify(payload),
+      });
+      const result = await res.json();
+      if (Array.isArray(result) && result[0]) created.push(result[0]);
+    }
+
+    if (created.length) {
+      const featuredOnes = created.filter(e => e.featured);
+      const mineOnes = created.filter(e => !e.featured);
+      if (featuredOnes.length) setFeaturedEvents(prev => [...prev, ...featuredOnes]);
+      if (mineOnes.length) setMyEvents(prev => [...prev, ...mineOnes]);
     }
     setForm(EMPTY_FORM);
     setAddingFeatured(false);
+    setMultiDates(null);
+    setApplyToAllDays(true);
     setMode("list");
   };
 
@@ -321,7 +335,7 @@ export default function CannesTracker() {
 {
   "name": "event name",
   "venue": "venue name",
-  "date": "June 22 or June 23 or June 24 or June 25 or June 26",
+  "dates": ["June 22"] or ["June 22", "June 23", "June 24"] if the event spans multiple days - only use dates from this list: June 22, June 23, June 24, June 25, June 26",
   "time": "start-end time or empty string",
   "vibe": "pick one: Afrobeats / Party, Networking, Day Party, Rooftop, Culture House, Brand Event, Club, Other",
   "tickets": "ticket website or empty string",
@@ -337,11 +351,13 @@ export default function CannesTracker() {
       const raw = data.content?.find(b => b.type === "text")?.text || "";
       const clean = raw.replace(/```json|```/g, "").trim();
       const parsed = JSON.parse(clean);
+      const validDates = Array.isArray(parsed.dates) ? parsed.dates.filter(d => DAYS.includes(d)) : [];
+      const firstDate = validDates[0] || "June 22";
       setForm(f => ({
         ...f,
         name: parsed.name || "",
         venue: parsed.venue || "",
-        date: DAYS.includes(parsed.date) ? parsed.date : "June 22",
+        date: firstDate,
         time: parsed.time || "",
         vibe: VIBES.includes(parsed.vibe) ? parsed.vibe : "Other",
         tickets: parsed.tickets || "",
@@ -350,6 +366,8 @@ export default function CannesTracker() {
         notes: parsed.notes || "",
         status: "maybe",
       }));
+      setMultiDates(validDates.length > 1 ? validDates : null);
+      setApplyToAllDays(true);
       setMode("manual");
       setFlyerImg(null);
     } catch (err) {
@@ -388,7 +406,17 @@ export default function CannesTracker() {
         </div>
         {isOpen && (
           <div style={c.expandArea}>
-            {event.address && <p style={c.detailText}>📍 {event.address}</p>}
+            {event.address && (
+              <a
+                href={`https://maps.google.com/?q=${encodeURIComponent(event.address)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ ...c.detailText, color: "#C8F97A", textDecoration: "underline", cursor: "pointer" }}
+                onClick={e => e.stopPropagation()}
+              >
+                📍 {event.address}
+              </a>
+            )}
             {event.notes && <p style={c.detailText}>💬 {event.notes}</p>}
             {event.tickets && <p style={c.detailText}>🎟 {event.tickets}</p>}
             {event.tables && <p style={c.detailText}>🪑 {event.tables}</p>}
@@ -439,12 +467,12 @@ export default function CannesTracker() {
             </button>
             <button style={c.cancelBtn} onClick={() => { setAuthMode(authMode === "login" ? "signup" : "login"); setAuthError(""); }}>
               {authMode === "login" ? "No account? Sign up" : "Have an account? Log in"}
+            </button>
             {authMode === "login" && (
               <button style={{ fontSize: 11, color: "#555", background: "none", border: "none", cursor: "pointer", marginTop: -4 }} onClick={handleForgotPassword}>
                 {resetSent ? "✓ Reset email sent!" : "Forgot password?"}
               </button>
             )}
-            </button>
           </div>
         </div>
       </>
@@ -543,6 +571,20 @@ export default function CannesTracker() {
             <div style={c.form}>
               <p style={c.formLabel}>Event Details</p>
               {form.name && <span style={c.pill}>✦ AI filled this in</span>}
+              {multiDates && (
+                <div style={{ backgroundColor: "#0d1a00", border: "1px solid #C8F97A55", borderRadius: 8, padding: "10px 12px", display: "flex", alignItems: "flex-start", gap: 8 }}>
+                  <input
+                    type="checkbox"
+                    id="multiday"
+                    checked={applyToAllDays}
+                    onChange={e => setApplyToAllDays(e.target.checked)}
+                    style={{ marginTop: 3 }}
+                  />
+                  <label htmlFor="multiday" style={{ fontSize: 12, color: "#C8F97A", cursor: "pointer", lineHeight: 1.4 }}>
+                    This looks like a multi-day event ({multiDates.map(d => d.replace("June ", "Jun ")).join(", ")}). Add to all {multiDates.length} days? Uncheck to add only {form.date.replace("June ", "Jun ")}.
+                  </label>
+                </div>
+              )}
               {isAdmin && (
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <input type="checkbox" id="featured" checked={addingFeatured}
@@ -583,7 +625,7 @@ export default function CannesTracker() {
                 ))}
               </div>
               <div style={c.btnRow}>
-                <button style={c.cancelBtn} onClick={() => { setMode("list"); setForm(EMPTY_FORM); setAddingFeatured(false); }}>Cancel</button>
+                <button style={c.cancelBtn} onClick={() => { setMode("list"); setForm(EMPTY_FORM); setAddingFeatured(false); setMultiDates(null); }}>Cancel</button>
                 <button style={c.submitBtn} onClick={handleAdd}>Save Event</button>
               </div>
             </div>
