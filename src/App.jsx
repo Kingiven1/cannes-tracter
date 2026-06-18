@@ -298,7 +298,7 @@ export default function CannesTracker() {
     const img = new Image();
     img.onload = () => {
       const canvas = document.createElement("canvas");
-      const maxSize = 500;
+      const maxSize = 1000;
       let w = img.width, h = img.height;
       if (w > maxSize || h > maxSize) {
         if (w > h) { h = Math.round(h * maxSize / w); w = maxSize; }
@@ -306,7 +306,7 @@ export default function CannesTracker() {
       }
       canvas.width = w; canvas.height = h;
       canvas.getContext("2d").drawImage(img, 0, 0, w, h);
-      resolve(canvas.toDataURL("image/jpeg", 0.3));
+      resolve(canvas.toDataURL("image/jpeg", 0.7));
     };
     img.src = dataUrl;
   });
