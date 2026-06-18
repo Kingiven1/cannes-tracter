@@ -98,6 +98,10 @@ export default function CannesTracker() {
   const [session, setSession] = useState(null);
   const [authMode, setAuthMode] = useState("login");
   const [resetSent, setResetSent] = useState(false);
+  const [authForm, setAuthForm] = useState({ email: "", password: "" });
+  const [authError, setAuthError] = useState("");
+  const [authLoading, setAuthLoading] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
 
   const handleForgotPassword = async () => {
     if (!authForm.email) { setAuthError("Enter your email first."); return; }
@@ -105,10 +109,6 @@ export default function CannesTracker() {
     setResetSent(true);
     setAuthError("");
   };
-  const [authForm, setAuthForm] = useState({ email: "", password: "" });
-  const [authError, setAuthError] = useState("");
-  const [authLoading, setAuthLoading] = useState(false);
-  const [checkingAuth, setCheckingAuth] = useState(true);
 
   const [featuredEvents, setFeaturedEvents] = useState([]);
   const [myEvents, setMyEvents] = useState([]);
@@ -593,4 +593,3 @@ export default function CannesTracker() {
     </>
   );
 }
-r
