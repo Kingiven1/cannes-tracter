@@ -102,6 +102,7 @@ export default function CannesTracker() {
   const [authError, setAuthError] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
+  const [shareCopied, setShareCopied] = useState(false);
 
   const handleForgotPassword = async () => {
     if (!authForm.email) { setAuthError("Enter your email first."); return; }
@@ -214,6 +215,23 @@ export default function CannesTracker() {
     setSession(null);
     setMyEvents([]);
     setFeaturedEvents([]);
+  };
+
+  const handleShare = async () => {
+    const shareData = {
+      title: "Cannes Lions Scheduler 2026",
+      text: "Track Cannes Lions events — upload a flyer and AI adds it to your schedule.",
+      url: "https://mycannesschedule.com",
+    };
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(shareData.url);
+        setShareCopied(true);
+        setTimeout(() => setShareCopied(false), 2000);
+      }
+    } catch (e) {}
   };
 
   const cycleStatus = async (id, currentStatus, isFeatured) => {
@@ -418,7 +436,21 @@ export default function CannesTracker() {
               </a>
             )}
             {event.notes && <p style={c.detailText}>💬 {event.notes}</p>}
-            {event.tickets && <p style={c.detailText}>🎟 {event.tickets}</p>}
+            {event.tickets && (
+              /^https?:\/\//i.test(event.tickets.trim()) || event.tickets.includes(".") ? (
+                <a
+                  href={/^https?:\/\//i.test(event.tickets.trim()) ? event.tickets.trim() : `https://${event.tickets.trim()}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ ...c.detailText, color: "#C8F97A", textDecoration: "underline", cursor: "pointer", display: "block" }}
+                  onClick={e => e.stopPropagation()}
+                >
+                  🎟 {event.tickets}
+                </a>
+              ) : (
+                <p style={c.detailText}>🎟 {event.tickets}</p>
+              )
+            )}
             {event.tables && <p style={c.detailText}>🪑 {event.tables}</p>}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 4 }}>
               {isAdmin && (
@@ -496,7 +528,12 @@ export default function CannesTracker() {
               <span style={{ color: "#333" }}>·</span>
               <span><span style={{ color: "#C8F97A", fontWeight: 700 }}>{totalGoing}</span> confirmed</span>
             </div>
-            <button style={c.logoutBtn} onClick={handleLogout}>Log out</button>
+            <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+              <button style={c.logoutBtn} onClick={handleShare}>
+                {shareCopied ? "✓ Link copied" : "Share app ↗"}
+              </button>
+              <button style={c.logoutBtn} onClick={handleLogout}>Log out</button>
+            </div>
           </div>
         </div>
 
