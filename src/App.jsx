@@ -90,6 +90,7 @@ const c = {
   authSub: { fontSize: 13, color: "#666", margin: 0 },
   authErr: { fontSize: 12, color: "#ff6b6b", margin: 0 },
   logoutBtn: { fontSize: 11, color: "#555", background: "none", border: "none", cursor: "pointer", padding: 0 },
+  shareBtn: { fontSize: 11, fontWeight: 700, color: "#C8F97A", background: "rgba(200,249,122,0.08)", border: "1px solid rgba(200,249,122,0.4)", borderRadius: 20, cursor: "pointer", padding: "5px 12px" },
   featuredStar: { fontSize: 10, color: "#C8F97A", marginLeft: 6 },
   adminToggle: { fontSize: 10, color: "#555", background: "none", border: "1px solid #333", borderRadius: 6, padding: "2px 8px", cursor: "pointer", marginTop: 4 },
 };
@@ -529,7 +530,7 @@ export default function CannesTracker() {
               <span><span style={{ color: "#C8F97A", fontWeight: 700 }}>{totalGoing}</span> confirmed</span>
             </div>
             <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-              <button style={c.logoutBtn} onClick={handleShare}>
+              <button style={c.shareBtn} onClick={handleShare}>
                 {shareCopied ? "✓ Link copied" : "Share app ↗"}
               </button>
               <button style={c.logoutBtn} onClick={handleLogout}>Log out</button>
